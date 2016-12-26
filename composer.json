@@ -1,0 +1,22 @@
+{
+    "name": "kilylabs/odata-1c",
+    "description": "ODATA protocol client adopted to use with 1C",
+    "type": "library",
+    "license": "MIT",
+	"autoload": {
+		"psr-4": {"Kily\\Tools1C\\OData\\": "src/OData"}
+	},
+	"autoload-dev": {
+		"psr-4": {"Kily\\Tools1C\\OData\\Tests\\": "tests/OData/Tests"}
+	},
+    "authors": [
+        {
+            "name": "Alexander Bogdanov",
+            "email": "ab@dev.kily.ru"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "guzzlehttp/guzzle": "^6.2"
+    }
+}
