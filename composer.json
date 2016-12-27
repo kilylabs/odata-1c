@@ -15,7 +15,6 @@
             "email": "ab@dev.kily.ru"
         }
     ],
-    "minimum-stability": "stable",
     "require": {
         "guzzlehttp/guzzle": "^6.2"
     }
