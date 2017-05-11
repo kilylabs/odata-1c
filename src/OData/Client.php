@@ -16,6 +16,8 @@ class Client
     protected $error_message;
     protected $error_code;
 
+    protected $_metadata = [];
+
     public function __construct($url,$options=[]) {
         $this->client = new Guzzle(array_replace_recursive([
             'base_uri'=>$url,
@@ -111,8 +113,8 @@ class Client
             $resp = $this->client->request($method,$request_str,$options);
             $this->request_ok = true;
         } catch(TransferException $e) {
-            if($e instanceof ClientException) {
-                if($resp = $e->getResponse()) {
+            if($e instanceof TransferException) {
+                if($e->hasResponse() && ($resp = $e->getResponse()) ) {
                     $this->error_code = $resp->getStatusCode();
                     $this->error_message = $resp->getReasonPhrase();
                 } else {
@@ -125,6 +127,7 @@ class Client
                 return null;
             }
         }
+        $this->parseMetadata($resp);
         return $this->toArray($resp);
     }
 
@@ -140,8 +143,26 @@ class Client
         return $this->request_ok;
     }
 
+    public function getLastId() {
+        return !empty($this->_metadata['last_id']) ? $this->_metadata['last_id'] : null;
+    }
+
     protected function toArray(ResponseInterface $resp) {
         return json_decode($resp->getBody(),true);
+    }
+
+    protected function parseMetadata(ResponseInterface $resp) {
+        if($body = $resp->getBody()) {
+            $this->_metadata['body'] = $body->__toString();
+        }
+        if($resp->hasHeader('Location')) {
+            preg_match("/guid'(.*?)'/",implode(' ',$resp->getHeader('Location')),$matches);
+            if($matches) $this->_metadata['last_id'] = $matches[1];
+        }
+    }
+
+    public function getMetadata($name) {
+        return isset($this->_metadata[$name]) ? $this->_metadata[$name] : null;
     }
 
     protected function objects() {
