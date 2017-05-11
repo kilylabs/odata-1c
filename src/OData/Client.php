@@ -184,4 +184,10 @@ class Client
 			'Перечисления'=>'Enum',
 		];
 	}
+
+    public function __call($name,$arguments=[]) {
+        $this->requested[] = "/";
+        $this->requested[] = ucfirst($name);
+        return $this->request('POST',[]);
+    }
 }
