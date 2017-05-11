@@ -26,6 +26,11 @@ class Client
         ],$options));
     }
 
+    public function id($id) {
+        $this->requested[] = "(guid'{$id}')";
+        return $this;
+    }
+
     public function create(array $data,$options=[]) {
         $this->update(null,$data,$options);
     }
@@ -75,12 +80,20 @@ class Client
 
     public function __get($name) {
         @list($type,$objname) = explode('_',$name,2);
+        /*
         if(!$objname)
             throw new Exception('Bad request: '.$name);
         if(!in_array($type,$this->objects())) {
             throw new Exception('Object of type '.$type.' not supported');
         }
+         */
 
+        if($this->requested && is_array($this->requested) && (count($this->requested) > 0)  ) {
+            $tmp = implode('',$this->requested);
+            if(strrpos($tmp,'/') !== (count($tmp)-1)) {
+                $name = '/'.$name;
+            }
+        }
         $this->requested[] = $name;
 
         return $this;
@@ -141,12 +154,13 @@ class Client
 			'План счетов'=>'ChartOfAccounts',
 			'План видов расчета'=>'ChartOfCalculationTypes',
 			'План видов характеристик'=>'ChartOfCharacteristicTypes',
-			'Регистр сведений'=>'InformationRegister',
+			'Регистр сведений'=>'InformationRegisters',
 			'Регистр накопления'=>'AccumulationRegister',
 			'Регистр расчета'=>'CalculationRegister',
 			'Регистр бухгалтерии'=>'AccountingRegister',
 			'Бизнес-процесс'=>'BusinessProcess',
 			'Задача'=>'Task',
+			'Перечисления'=>'Enum',
 		];
 	}
 }
