@@ -31,7 +31,7 @@ class Client
     }
 
     public function create(array $data,$options=[]) {
-        $this->update(null,$data,$options);
+        return $this->update(null,$data,$options);
     }
 
     public function get($id=null,$filter=null,$options=[]) {
@@ -97,6 +97,7 @@ class Client
         $this->request_ok = false;
         $request_str = implode('',$this->requested);
         $this->requested = [];
+        \yii::trace('Start oData request ' . $request_str . ' (' . $method . ')', 'oData');
 
         try {
             $resp = $this->client->request($method,$request_str,$options);
@@ -117,6 +118,9 @@ class Client
                 return null;
             }
         }
+
+        \yii::trace('End oData request ' . $request_str . ' (' . $method . ')', 'oData');
+
         return $this->toArray($resp);
     }
 
