@@ -2,11 +2,13 @@
 
 namespace Kily\Tools1C\OData;
 
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Client as Guzzle;
+use yii\helpers\Html;
 
 class Client
 {
@@ -68,6 +70,16 @@ class Client
         return $this->request($method,$options);
     }
 
+    public function getMetadata() {
+        $resp = $this->client->request('get','$metadata',[]);
+        $xml = simplexml_load_string($resp->getBody(), 'SimpleXMLElement', 0, 'edmx', true);
+        $children = $xml->children('edmx', true)->children()->children();
+        $json = json_encode($children);
+        $array = json_decode($json,TRUE);
+
+        return array_merge($array['EntityType'], $array['ComplexType']);
+    }
+
     public function delete($id,$options=[]) {
         $query = null;
         if($id) {
@@ -97,31 +109,56 @@ class Client
         $this->request_ok = false;
         $request_str = implode('',$this->requested);
         $this->requested = [];
-        \yii::trace('Start oData request ' . $request_str . ' (' . $method . ')', 'oData');
+        if (!empty($options['query'])) {
+            $filter = '?' . urldecode(http_build_query($options['query']));
+            if (!empty($options['query']['$filter']) && ($options['query']['$filter'] === 'true eq false' || $options['query']['$filter'] === 'false eq true')) {
+                $this->request_ok = true;
+                return;
+            }
+        } else {
+            $filter = '';
+        }
+
+        $url = $this->client->getConfig('base_uri') . $request_str . $filter;
+        $message = 'oData request ' . Html::a($url, $url, [
+                'target' => '_blank'
+            ]) . ' (' . $method . ')';
+        \yii::beginProfile($message, 'oData');
+        \yii::trace('Start ' . $message, 'oData');
 
         try {
             $resp = $this->client->request($method,$request_str,$options);
             $this->response = $resp;
             $this->request_ok = true;
         } catch(TransferException $e) {
-            if($e instanceof ClientException) {
-                if($resp = $e->getResponse()) {
-                    $this->error_code = $resp->getStatusCode();
-                    $this->error_message = $resp->getReasonPhrase();
-                } else {
-                    $this->error_code = $e->getCode();
-                    $this->error_message = $e->getMessage();
-                }
+            if($e instanceof ClientException || $e instanceof ServerException) {
+//                if($resp = $e->getResponse()) {
+//                    $this->error_code = $resp->getStatusCode();
+//                    $this->error_message = $resp->getReasonPhrase();
+//                } else {
+                $this->error_code = $e->getCode();
+                $this->error_message = $e->getResponse()->getBody();
+//                }
             } else {
                 $this->error_code = $e->getCode();
-                $this->error_message = $e->getMessage();
-                return null;
+                $this->error_message = $e->getTraceAsString();
             }
+
+            if (isset($options['json'])) {
+                $data = var_export($options['json'], true);
+            } else {
+                $data = '';
+            }
+
+            throw new \yii\base\Exception('Error while requested ' . $url . '(' . $method . ')' . ' ' . $this->error_message . '(' . $this->error_code . ')' . $data);
         }
 
-        \yii::trace('End oData request ' . $request_str . ' (' . $method . ')', 'oData');
+        \yii::endProfile($message, 'oData');
+        \yii::trace('End ' . $message, 'oData');
 
-        return $this->toArray($resp);
+        if ($this->request_ok) {
+            return $this->toArray($resp);
+        }
     }
 
     public function getErrorMessage() {
@@ -141,21 +178,21 @@ class Client
     }
 
     protected function objects() {
-		return [
-			'Справочник'=>'Catalog',
-			'Документ'=>'Document',
-			'Журнал документов'=>'DocumentJournal',
-			'Константа'=>'Constant',
-			'План обмена'=>'ExchangePlan',
-			'План счетов'=>'ChartOfAccounts',
-			'План видов расчета'=>'ChartOfCalculationTypes',
-			'План видов характеристик'=>'ChartOfCharacteristicTypes',
-			'Регистр сведений'=>'InformationRegister',
-			'Регистр накопления'=>'AccumulationRegister',
-			'Регистр расчета'=>'CalculationRegister',
-			'Регистр бухгалтерии'=>'AccountingRegister',
-			'Бизнес-процесс'=>'BusinessProcess',
-			'Задача'=>'Task',
-		];
-	}
+        return [
+            'Справочник'=>'Catalog',
+            'Документ'=>'Document',
+            'Журнал документов'=>'DocumentJournal',
+            'Константа'=>'Constant',
+            'План обмена'=>'ExchangePlan',
+            'План счетов'=>'ChartOfAccounts',
+            'План видов расчета'=>'ChartOfCalculationTypes',
+            'План видов характеристик'=>'ChartOfCharacteristicTypes',
+            'Регистр сведений'=>'InformationRegister',
+            'Регистр накопления'=>'AccumulationRegister',
+            'Регистр расчета'=>'CalculationRegister',
+            'Регистр бухгалтерии'=>'AccountingRegister',
+            'Бизнес-процесс'=>'BusinessProcess',
+            'Задача'=>'Task',
+        ];
+    }
 }
