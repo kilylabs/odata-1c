@@ -8,34 +8,43 @@ use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Client as Guzzle;
-use yii\base\Component;
-use yii\helpers\Html;
 
-class Client extends Component
+class Client
 {
-    /**
-     * @var Response
-     */
-    public $response = null;
-    public $timeout = 300;
-    public $options = [];
-    public $host = null;
-    public $path = null;
     protected $requested = null;
     protected $client = null;
+    protected $profiler = null;
 
-    protected $error_message;
-    protected $error_code;
-    protected $request_ok = null;
+    /**
+     * @deprecated
+     */
+    protected $error_code = null;
 
-    public function init() {
+    /**
+     * @deprecated
+     */
+    protected $error_message = null;
+
+    /**
+     * @deprecated
+     */
+    protected $request_ok = false;
+
+    /**
+     * @deprecated
+     * @var bool
+     */
+    public $isCompatibilityMode = false;
+
+    public function __construct($url, $options, $profiler = null) {
         $this->client = new Guzzle(array_replace_recursive([
-            'base_uri'=>trim($this->host, '/') . '/' . trim($this->path, '/') . '/',
-            'timeout'=>$this->timeout,
+            'base_uri'=>$url,
+            'timeout'=>300,
             'headers'=>[
                 'Accept'=>'application/json',
             ],
-        ],$this->options));
+        ],$options));
+        $this->setProfiler($profiler);
     }
 
     public function create(array $data,$options=[]) {
@@ -83,7 +92,7 @@ class Client extends Component
         $json = json_encode($children);
         $array = json_decode($json,TRUE);
 
-        return array_merge($array['EntityType'], $array['ComplexType']);
+        return $array;
     }
 
     public function delete($id,$options=[]) {
@@ -108,75 +117,87 @@ class Client extends Component
         return $this;
     }
 
-    public function request($method,$options=[]) {
-        $resp = null;
-        $this->error_code = null;
-        $this->error_message = null;
-        $this->request_ok = false;
-        $request_str = implode('',$this->requested);
-        $this->requested = [];
-        if (!empty($options['query'])) {
-            $filter = '?' . urldecode(http_build_query($options['query']));
-            if (!empty($options['query']['$filter']) && ($options['query']['$filter'] === 'true eq false' || $options['query']['$filter'] === 'false eq true')) {
-                $this->request_ok = true;
-                return;
-            }
-        } else {
-            $filter = '';
+    protected function getProfiler() {
+        return $this->profiler;
+    }
+
+    /**
+     * @param Profiler $profiler
+     *
+     * @return $this
+     */
+    public function setProfiler(/**?Profiler*/ $profiler) {
+        if (!($profiler instanceof Profiler) && $profiler !== null) {
+            throw new \InvalidArgumentException('Profiler must be instance of ' . Profiler::class . ' or null');
         }
 
-        $url = $this->client->getConfig('base_uri') . $request_str . $filter;
-        $message = 'oData request ' . Html::a($url, $url, [
-                'target' => '_blank'
-            ]) . ' (' . $method . ')';
-        \yii::beginProfile($message, 'oData');
-        \yii::trace('Start ' . $message, 'oData');
+        $this->profiler = $profiler;
+
+        return $this;
+    }
+
+    /**
+     * @param $options
+     * @param $method
+     *
+     * @return Request
+     */
+    protected function createRequest($options, $method) {
+        $requestStr = implode('',$this->requested);
+        $this->requested = [];
+        $request = new Request($requestStr, $options, $method);
+        return $request;
+    }
+
+    public function request($method,$options=[]) {
+        if ($this->isCompatibilityMode) {
+            $this->error_code = null;
+            $this->error_message = null;
+            $this->request_ok = true;
+        }
+
+        $request = $this->createRequest($options, $method);
+        if ($profiler = $this->getProfiler()) {
+            $profiler->setRequest($request);
+            $profiler->begin();
+        }
 
         try {
-            $resp = $this->client->request($method,$request_str,$options);
-            $this->response = $resp;
-            $this->request_ok = true;
-        } catch(TransferException $e) {
-            if($e instanceof ClientException || $e instanceof ServerException) {
-//                if($resp = $e->getResponse()) {
-//                    $this->error_code = $resp->getStatusCode();
-//                    $this->error_message = $resp->getReasonPhrase();
-//                } else {
-                $this->error_code = $e->getCode();
-                $this->error_message = $e->getResponse()->getBody();
-//                }
+            $resp = $this->client->request($request->getMethod(), $request->getUrl(), $request->getOptions());
+        } catch (TransferException $e) {
+            if ($this->isCompatibilityMode) {
+                $this->request_ok = false;
+                if($e instanceof TransferException) {
+                    if($e->hasResponse() && ($resp = $e->getResponse()) ) {
+                        $this->error_code = $resp->getStatusCode();
+                        $this->error_message = $resp->getReasonPhrase();
+                    } else {
+                        $this->error_code = $e->getCode();
+                        $this->error_message = $e->getMessage();
+                    }
+                } else {
+                    $this->error_code = $e->getCode();
+                    $this->error_message = $e->getMessage();
+                    return null;
+                }
             } else {
-                $this->error_code = $e->getCode();
-                $this->error_message = $e->getTraceAsString();
-            }
+                if($e instanceof ClientException || $e instanceof ServerException) {
+                    $errorCode = $e->getCode();
+                    $errorMessage = $e->getResponse()->getBody();
+                } else {
+                    $errorCode = $e->getCode();
+                    $errorMessage = $e->getTraceAsString();
+                }
 
-            if (isset($options['json'])) {
-                $data = var_export($options['json'], true);
-            } else {
-                $data = '';
+                throw new RequestException($request, $errorMessage, $errorCode);
             }
-
-            throw new \yii\base\Exception('Error while requested ' . $url . '(' . $method . ')' . ' ' . $this->error_message . '(' . $this->error_code . ')' . $data);
         }
 
-        \yii::endProfile($message, 'oData');
-        \yii::trace('End ' . $message, 'oData');
-
-        if ($this->request_ok) {
-            return $this->toArray($resp);
+        if ($profiler) {
+            $profiler->end();
         }
-    }
 
-    public function getErrorMessage() {
-        return $this->error_message;
-    }
-
-    public function getErrorCode() {
-        return $this->error_code;
-    }
-
-    public function isOk() {
-        return $this->request_ok;
+        return $this->toArray($resp);
     }
 
     protected function toArray(ResponseInterface $resp) {
@@ -200,5 +221,26 @@ class Client extends Component
             'Бизнес-процесс'=>'BusinessProcess',
             'Задача'=>'Task',
         ];
+    }
+
+    /**
+     * @deprecated
+     */
+    public function getErrorCode() {
+        return $this->error_code;
+    }
+
+    /**
+     * @deprecated
+     */
+    public function getErrorMessage() {
+        return $this->error_message;
+    }
+
+    /**
+     * @deprecated
+     */
+    public function isOk() {
+        return $this->request_ok;
     }
 }
