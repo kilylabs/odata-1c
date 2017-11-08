@@ -8,28 +8,34 @@ use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Client as Guzzle;
+use yii\base\Component;
 use yii\helpers\Html;
 
-class Client
+class Client extends Component
 {
     /**
      * @var Response
      */
     public $response = null;
+    public $timeout = 300;
+    public $options = [];
+    public $host = null;
+    public $path = null;
     protected $requested = null;
     protected $client = null;
 
     protected $error_message;
     protected $error_code;
+    protected $request_ok = null;
 
-    public function __construct($url,$options=[]) {
+    public function init() {
         $this->client = new Guzzle(array_replace_recursive([
-            'base_uri'=>$url,
-            'timeout'=>'300',
+            'base_uri'=>trim($this->host, '/') . '/' . trim($this->path, '/') . '/',
+            'timeout'=>$this->timeout,
             'headers'=>[
                 'Accept'=>'application/json',
             ],
-        ],$options));
+        ],$this->options));
     }
 
     public function create(array $data,$options=[]) {
