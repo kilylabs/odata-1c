@@ -11,15 +11,21 @@ namespace Kily\Tools1C\OData;
 
 class Request
 {
+    protected $host = null;
     protected $url = null;
     protected $options = null;
     protected $method = null;
 
-    public function __construct($url, $options, $method)
+    public function __construct($host, $url, $options, $method)
     {
+        $this->host = $host;
         $this->url = $url;
         $this->options = $options;
         $this->method = $method;
+    }
+
+    public function getHost() {
+        return $this->host;
     }
 
     public function getUrl() {

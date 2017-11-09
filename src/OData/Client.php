@@ -163,7 +163,7 @@ class Client
     protected function createRequest($options, $method) {
         $requestStr = implode('',$this->requested);
         $this->requested = [];
-        $request = new Request($requestStr, $options, $method);
+        $request = new Request($this->client->getConfig('base_uri'), $requestStr, $options, $method);
         return $request;
     }
 
