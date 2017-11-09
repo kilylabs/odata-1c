@@ -14,6 +14,7 @@ class Client
     protected $requested = null;
     protected $client = null;
     protected $profiler = null;
+    protected $_metadata = null;
 
     /**
      * @deprecated
@@ -85,7 +86,24 @@ class Client
         return $this->request($method,$options);
     }
 
-    public function getMetadata() {
+    public function getLastId() {
+        return !empty($this->_metadata['last_id']) ? $this->_metadata['last_id'] : null;
+    }
+    protected function parseMetadata(ResponseInterface $resp) {
+        if($body = $resp->getBody()) {
+            $this->_metadata['body'] = $body->__toString();
+        }
+        if($resp->hasHeader('Location')) {
+            preg_match("/guid'(.*?)'/",implode(' ',$resp->getHeader('Location')),$matches);
+            if($matches) $this->_metadata['last_id'] = $matches[1];
+        }
+    }
+
+    public function getMetadata($name) {
+        if ($name !== null) {
+            return isset($this->_metadata[$name]) ? $this->_metadata[$name] : null;
+        }
+
         $resp = $this->client->request('get','$metadata',[]);
         $xml = simplexml_load_string($resp->getBody(), 'SimpleXMLElement', 0, 'edmx', true);
         $children = $xml->children('edmx', true)->children()->children();
@@ -196,6 +214,8 @@ class Client
         if ($profiler) {
             $profiler->end();
         }
+
+        $this->parseMetadata($resp);
 
         return $this->toArray($resp);
     }
