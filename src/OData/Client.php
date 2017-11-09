@@ -99,7 +99,7 @@ class Client
         }
     }
 
-    public function getMetadata($name) {
+    public function getMetadata($name = null) {
         if ($name !== null) {
             return isset($this->_metadata[$name]) ? $this->_metadata[$name] : null;
         }
