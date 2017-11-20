@@ -263,4 +263,9 @@ class Client
     public function isOk() {
         return $this->request_ok;
     }
+
+    public function reset() {
+        $this->requested = [];
+        return $this;
+    }
 }
