@@ -61,6 +61,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function test__get($attr,$is_exception)
     {
+        $this->markTestSkipped(
+            'This test is no longer valid, but may be used in the future'
+        );
         $e = false;
         try {
             $this->object->$attr;
@@ -76,8 +79,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testGet()
     {
         // test list
-        $data = $this->object->{'Catalog_Номенклатура'}->get();
-        $this->assertTrue(is_array($data));
+        $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get();
+        $this->assertTrue(is_object($data));
+        $this->assertTrue(is_array($data->toArray()));
         $this->assertTrue(isset($data['value']));
 
         if(!isset($data['value']) || !count($data['value'])) { 
@@ -89,14 +93,16 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         // test getting by Ref_Key
         $id = $data['value'][0]['Ref_Key'];
-        $data = $this->object->{'Catalog_Номенклатура'}->get($id);
-        $this->assertTrue(is_array($data));
+        $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get($id);
+        $this->assertTrue(is_object($data));
+        $this->assertTrue(is_array($data->toArray()));
         $this->assertTrue(isset($data['Ref_Key']));
         $this->assertTrue($data['Ref_Key'] === $id);
 
         //test filter
-        $data = $this->object->{'Catalog_Номенклатура'}->get(null,"НаименованиеПолное ne ''");
-        $this->assertTrue(is_array($data));
+        $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get(null,"НаименованиеПолное ne '".addslashes($data['value'][0]['НаименованиеПолное'])."'");
+        $this->assertTrue(is_object($data));
+        $this->assertTrue(is_array($data->toArray()));
         $this->assertTrue(isset($data['value'][0]['Ref_Key']));
         $this->assertTrue($data['value'][0]['Ref_Key'] === $id);
 
@@ -107,7 +113,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testCreate()
     {
-        if(!isset($_SERVER['ALLOW_UNSAFE_OPERATIONS']))
+        if(!isset($_SERVER['ALLOW_UNSAFE_OPERATIONS']) || !$_SERVER['ALLOW_UNSAFE_OPERATIONS'])
             $this->markTestSkipped(
                 'You should explictly allow tests with create,update and delete operations'
             );
@@ -127,7 +133,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testUpdate()
     {
-        if(!isset($_SERVER['ALLOW_UNSAFE_OPERATIONS']))
+        if(!isset($_SERVER['ALLOW_UNSAFE_OPERATIONS']) || !$_SERVER['ALLOW_UNSAFE_OPERATIONS'])
             $this->markTestSkipped(
                 'You should explictly allow tests with update operations'
             );
@@ -147,7 +153,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testDelete()
     {
-        if(!isset($_SERVER['ALLOW_UNSAFE_OPERATIONS']))
+        if(!isset($_SERVER['ALLOW_UNSAFE_OPERATIONS']) || !$_SERVER['ALLOW_UNSAFE_OPERATIONS'])
             $this->markTestSkipped(
                 'You should explictly allow tests with delete operations. WARNING! It could be DANGEROUS! Use it at your own risk!'
             );
@@ -167,8 +173,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testRequest()
     {
         $this->object->{'Catalog_Номенклатура'};
-        $data = $this->object->request("GET");
-        $this->assertTrue(is_array($data));
+        $data = $this->object->top(1)->request("GET");
+        $this->assertTrue(is_object($data));
+        $this->assertTrue(is_array($data->toArray()));
     }
 
     /**
@@ -176,10 +183,10 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetErrorMessage()
     {
-        $data = $this->object->{'Catalog_Номенклатураa'}->get();
+        $data = $this->object->{'Catalog_Номенклатураa'}->top(1)->get();
         $this->assertEquals('Not found',$this->object->getErrorMessage());
 
-        $data = $this->object->{'Catalog_Номенклатура'}->get();
+        $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get();
         $this->assertEquals('',$this->object->getErrorMessage());
     }
 
@@ -188,10 +195,10 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetErrorCode()
     {
-        $data = $this->object->{'Catalog_Номенклатураa'}->get();
+        $data = $this->object->{'Catalog_Номенклатураa'}->top(1)->get();
         $this->assertEquals('404',$this->object->getErrorCode());
 
-        $data = $this->object->{'Catalog_Номенклатура'}->get();
+        $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get();
         $this->assertEquals('',$this->object->getErrorCode());
     }
 
@@ -200,10 +207,10 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testIsOk()
     {
-        $data = $this->object->{'Catalog_Номенклатураa'}->get();
+        $data = $this->object->{'Catalog_Номенклатураa'}->top(1)->get();
         $this->assertFalse($this->object->isOk());
 
-        $data = $this->object->{'Catalog_Номенклатура'}->get();
+        $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get();
         $this->assertTrue($this->object->isOk());
     }
 
