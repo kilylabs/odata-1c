@@ -7,16 +7,22 @@ use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Client as Guzzle;
 
-class Client
+class Client implements \ArrayAccess
 {
 
+    protected $id = null;
+
     protected $requested = null;
+    protected $response = null;
     protected $client = null;
+    protected $request_options = [];
 
     protected $error_message;
     protected $error_code;
 
     protected $_metadata = [];
+
+    protected $is_called = false;
 
     public function __construct($url,$options=[]) {
         $this->client = new Guzzle(array_replace_recursive([
@@ -29,7 +35,7 @@ class Client
     }
 
     public function id($id) {
-        $this->requested[] = "(guid'{$id}')";
+        $this->id = $id;
         return $this;
     }
 
@@ -37,10 +43,22 @@ class Client
         $this->update(null,$data,$options);
     }
 
+    public function expand($name) {
+        $this->request_options['query']['$expand'] = $name;
+        return $this;
+    }
+
+    public function filter($name) {
+        $this->request_options['query']['$filter'] = $name;
+        return $this;
+    }
+
     public function get($id=null,$filter=null,$options=[]) {
-        if(is_array($filter) && !$options) {
+        if($id === null) $id = $this->id;
+        elseif(!preg_match('/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',$id)) {
             $options = $filter;
-            $filter = null;
+            $filter = $id;
+            $id = null;
         }
 
         $query = null;
@@ -48,14 +66,22 @@ class Client
             $query .= "(guid'{$id}')";
         }
         if($filter) {
-            $options['query']['$filter'] = $filter;
+            $this->filter($filter);
         }
-        $this->requested[] = $query;
+        if($query)
+            $this->requested[] = $query;
 
         return $this->request('GET',$options);
     }
 
-    public function update($id,$data=[],$options=[]) {
+    public function update($id=null,$data=[],$options=[]) {
+        if($id === null) $id = $this->id;
+        elseif(is_array($id)) {
+            $options = $data;
+            $data = $id;
+            $id = $this->id;
+        }
+
         $method = 'PATCH';
         if(!$id)
             $method = 'POST';
@@ -71,7 +97,8 @@ class Client
         return $this->request($method,$options);
     }
 
-    public function delete($id,$options=[]) {
+    public function delete($id=null,$options=[]) {
+        if($id === null) $id = $this->id;
         $query = null;
         if($id) {
             $query .= "(guid'{$id}')";
@@ -81,6 +108,8 @@ class Client
     }
 
     public function __get($name) {
+        $this->requested = [];
+
         @list($type,$objname) = explode('_',$name,2);
         /*
         if(!$objname)
@@ -96,6 +125,7 @@ class Client
                 $name = '/'.$name;
             }
         }
+
         $this->requested[] = $name;
 
         return $this;
@@ -106,8 +136,16 @@ class Client
         $this->error_code = null;
         $this->error_message = null;
         $this->request_ok = false;
+        $options = array_replace_recursive($this->request_options,$options!==null?$options:[]);
+        $this->request_options = [];
+
         $request_str = implode('',$this->requested);
-        $this->requested = [];
+        if($this->is_called) {
+            array_splice($this->requested,$this->id ? -3 : -2);
+            $this->is_called = false;
+        } elseif ($this->id) {
+            array_splice($this->requested,-1);
+        }
 
         try {
             $resp = $this->client->request($method,$request_str,$options);
@@ -128,7 +166,9 @@ class Client
             }
         }
         $this->parseMetadata($resp);
-        return $this->toArray($resp);
+        $this->response = new Response($this,$resp);
+
+        return $this;
     }
 
     public function getErrorMessage() {
@@ -145,10 +185,6 @@ class Client
 
     public function getLastId() {
         return !empty($this->_metadata['last_id']) ? $this->_metadata['last_id'] : null;
-    }
-
-    protected function toArray(ResponseInterface $resp) {
-        return json_decode($resp->getBody(),true);
     }
 
     protected function parseMetadata(ResponseInterface $resp) {
@@ -186,8 +222,35 @@ class Client
 	}
 
     public function __call($name,$arguments=[]) {
+        $this->is_called = true;
+        if($this->id) {
+            $this->requested[] = "(guid'{$this->id}')";
+        }
         $this->requested[] = "/";
         $this->requested[] = ucfirst($name);
         return $this->request('POST',[]);
+    }
+
+    public function offsetSet($offset, $value) {
+		throw new Exception('You\'re trying to write protected object');
+    }
+
+    public function offsetExists($offset) {
+        return $this->response && isset($this->response->toArray()[$offset]);
+    }
+
+    public function offsetUnset($offset) {
+    }
+
+    public function offsetGet($offset) {
+        return $this->response && isset($this->response->toArray()[$offset]) ? $this->response->toArray()[$offset] : null;
+    }
+
+    public function getResponse() {
+        return $this->response;
+    }
+
+    public function toArray() {
+        return $this->response ? $this->response->toArray() : [];
     }
 }
