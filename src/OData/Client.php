@@ -48,6 +48,11 @@ class Client implements \ArrayAccess
         return $this;
     }
 
+    public function top($cnt) {
+        $this->request_options['query']['$top'] = $cnt;
+        return $this;
+    }
+
     public function filter($name) {
         $this->request_options['query']['$filter'] = $name;
         return $this;
