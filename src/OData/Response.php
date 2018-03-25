@@ -28,7 +28,12 @@ class Response
 
     public function values() {
         $arr = $this->toArray();
-        return $arr['value'] ?? [];
+        return isset($arr['value']) ? $arr['value'] : (isset($arr['Ref_Key']) ? [$arr] : []);
+    }
+
+    public function first() {
+        $vals = $this->values();
+        return isset($vals[0]) ? $vals[0] : null;
     }
 
 }

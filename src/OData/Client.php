@@ -17,8 +17,10 @@ class Client implements \ArrayAccess
     protected $client = null;
     protected $request_options = [];
 
-    protected $error_message;
-    protected $error_code;
+    protected $http_message;
+    protected $http_code;
+    protected $odata_message;
+    protected $odata_code;
 
     protected $_metadata = [];
 
@@ -40,7 +42,7 @@ class Client implements \ArrayAccess
     }
 
     public function create(array $data,$options=[]) {
-        $this->update(null,$data,$options);
+        return $this->update(null,$data,$options);
     }
 
     public function expand($name) {
@@ -138,8 +140,12 @@ class Client implements \ArrayAccess
 
     public function request($method,$options=[]) {
         $resp = null;
-        $this->error_code = null;
-        $this->error_message = null;
+
+        $this->http_code = null;
+        $this->http_message = null;
+        $this->odata_code = null;
+        $this->odata_message = null;
+
         $this->request_ok = false;
         $options = array_replace_recursive($this->request_options,$options!==null?$options:[]);
         $this->request_options = [];
@@ -158,15 +164,15 @@ class Client implements \ArrayAccess
         } catch(TransferException $e) {
             if($e instanceof TransferException) {
                 if($e->hasResponse() && ($resp = $e->getResponse()) ) {
-                    $this->error_code = $resp->getStatusCode();
-                    $this->error_message = $resp->getReasonPhrase();
+                    $this->http_code = $resp->getStatusCode();
+                    $this->http_message = $resp->getReasonPhrase();
                 } else {
-                    $this->error_code = $e->getCode();
-                    $this->error_message = $e->getMessage();
+                    $this->http_code = $e->getCode();
+                    $this->http_message = $e->getMessage();
                 }
             } else {
-                $this->error_code = $e->getCode();
-                $this->error_message = $e->getMessage();
+                $this->http_code = $e->getCode();
+                $this->http_message = $e->getMessage();
                 return null;
             }
         }
@@ -176,12 +182,20 @@ class Client implements \ArrayAccess
         return $this;
     }
 
+    public function getHttpErrorMessage() {
+        return $this->http_message;
+    }
+
+    public function getHttpErrorCode() {
+        return $this->http_code;
+    }
+
     public function getErrorMessage() {
-        return $this->error_message;
+        return $this->odata_message;
     }
 
     public function getErrorCode() {
-        return $this->error_code;
+        return $this->odata_code;
     }
 
     public function isOk() {
@@ -195,6 +209,14 @@ class Client implements \ArrayAccess
     protected function parseMetadata(ResponseInterface $resp) {
         if($body = $resp->getBody()) {
             $this->_metadata['body'] = $body->__toString();
+            if($data = json_decode($this->_metadata['body'],true)) {
+                if(isset($data['odata.error'])) {
+                    if(isset($data['odata.error']['code']))
+                        $this->odata_code = $data['odata.error']['code'];
+                    if(isset($data['odata.error']['message']['value']))
+                        $this->odata_message = $data['odata.error']['message']['value'];
+                }
+            }
         }
         if($resp->hasHeader('Location')) {
             preg_match("/guid'(.*?)'/",implode(' ',$resp->getHeader('Location')),$matches);
@@ -257,5 +279,13 @@ class Client implements \ArrayAccess
 
     public function toArray() {
         return $this->response ? $this->response->toArray() : [];
+    }
+
+    public function values() {
+        return $this->response ? $this->response->values() : [];
+    }
+
+    public function first() {
+        return $this->response ? $this->response->first() : [];
     }
 }
