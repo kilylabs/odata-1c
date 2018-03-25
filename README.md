@@ -1,6 +1,8 @@
 # odata-1c
 OData клиент для 1C 
 
+Документация 1С для интерфейса OData: https://its.1c.ru/db/v838doc#bookmark:dev:TI000001358
+
 Установка
 ------------
 
@@ -13,9 +15,7 @@ $ composer require kilylabs/odata-1c
 
 Использование
 -----
-
-Пример кода
-
+#### Инициализация
 ```php
 <?php
 
@@ -30,59 +30,86 @@ $client = new Client('http://HOSTNAME/BASE/odata/standard.odata/',[
     ],
 	'timeout' => 300,
 ]);
+```
 
-$product_data = [
+#### Получение объектов из 1С
+```php
+<?php
+
+// Получение всех объектов из справочника "Номенклатура" 1С
+$data = $client->{'Catalog_Номенклатура'}->get()->values();
+var_dump($data);
+/*
+array(1) {
+  [0]=>
+  array(105) {
+    ["Ref_Key"]=>
+    string(36) "3ca886b6-aabd-11e7-1a8d-021c5dd9fc20"
+    ["Description"]=>
+    string(51) "ПАЛЬТО ПУХ ЖЕН HATANGA V2 БОРДО 46"
+,,,
+*/
+
+// Получение всех объектов с проверкой ошибок
+$data = $client->{'Catalog_Номенклатура'}->get();
+if(!$client->isOk()) {
+    var_dump('Something went wrong: ',$client->getHttpErrorCode(),$client->getHttpErrorMessage(),$client->getErrorCode(),$client->getErrorMessage(),$data->toArray());
+    die();
+}
+var_dump($data->values());
+
+// Получение по UUID (ID или Ref_Key)
+$data = $client->{'Catalog_Номенклатура'}->get("40366f94-cded-11e6-e880-00155dd9fc47")->first();
+$data = $client->{'Catalog_Номенклатура'}->id("40366f94-cded-11e6-e880-00155dd9fc47")->get()->first();
+
+// Получение по фильтру
+$data = $client->{'Catalog_Номенклатура'}->get("Артикул eq 'АРТ-1'")->values();
+$data = $client->{'Catalog_Номенклатура'}->filter("Артикул eq 'АРТ-1'")->get()->values();
+
+// Получение вместе с дополнительной информацией
+$data = $client->{'Catalog_Номенклатура'}->expand('Производитель,Марка')->get()->values();
+$data = $client->{'Catalog_Номенклатура'}->expand('ВидНоменклатуры')->get()->values();
+
+// Ограничение по количеству в запросе
+$data = $client->{'Catalog_Номенклатура'}->top(10)->get()->values();
+```
+#### Создание объектов в 1С
+```php
+<?php
+
+// Создание 
+$data = $client->{'Catalog_Номенклатура'}->create([
     'Артикул'=>'CERTANLY_NONEXISTENT',
     'Description'=>'test test test nonexistent',
-];
+]);
 
-// Creation
-$data = $client->{'Catalog_Номенклатура'}->create($product_data);
-if(!$client->isOk()) {
-    var_dump('Something went wrong: ',$client->getErrorCode(),$client->getErrorMessage(),$data);
-    die();
-}
-echo "CREATED!\n";
+// Получение ID созданного объекта
+echo $data->getLastId()
+```
 
-// Getting using filter....
-$data = $client->{'Catalog_Номенклатура'}->get(null,"Артикул eq 'CERTANLY_NONEXISTENT'");
-if(!$client->isOk()) {
-    var_dump('Something went wrong: ',$client->getErrorCode(),$client->getErrorMessage(),$data);
-    die();
-}
-echo "GOT!\n";
-var_dump($data);
+#### Обновление объектов в 1С
+```php
+<?php
 
-// ... or using Ref_Key
-$id = $data['value'][0]['Ref_Key'];
-$data = $client->{'Catalog_Номенклатура'}->get($id);
-if(!$client->isOk()) {
-    var_dump('Something went wrong: ',$client->getErrorCode(),$client->getErrorMessage(),$data);
-    die();
-}
-echo "GOT BY ID!\n";
-var_dump($data);
-
-// Updating
-$data = $client->{'Catalog_Номенклатура'}->update($id,[
+// Обновление
+$data = $client->{'Catalog_Номенклатура'}->update('40366f94-cded-11e6-e880-00155dd9fc47',[
     'Description'=>'Test description',
 ]);
-if(!$client->isOk()) {
-    var_dump('Something went wrong: ',$client->getErrorCode(),$client->getErrorMessage(),$data);
-    die();
-}
-echo "UPDATED!\n";
+```
+#### Удаление объектов из 1С
+```php
+<?php
+// Померка на удаление
+$data = $client->{'Catalog_Номенклатура'}->update('40366f94-cded-11e6-e880-00155dd9fc47',{
+    'DeletionMark'=>true,
+});
 
-// deletion
-$data = $client->{'Catalog_Номенклатура'}->delete($id);
-if(!$client->isOk()) {
-    var_dump('Something went wrong: ',$client->getErrorCode(),$client->getErrorMessage(),$data);
-    die();
-}
-echo "DELETED!\n";
+// Полное удаление объека из 1С (я бы не стал использовать...)
+$data = $client->{'Catalog_Номенклатура'}->delete('40366f94-cded-11e6-e880-00155dd9fc47');
 ```
 
 TODO
 -----
-- сделать метод getLastId();
+- ~~сделать метод getLastId();~~
+- ~~fluent интерфейс~~
 - поддержка XML?
