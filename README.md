@@ -99,7 +99,7 @@ $data = $client->{'Catalog_Номенклатура'}->update('40366f94-cded-11e
 #### Удаление объектов из 1С
 ```php
 <?php
-// Померка на удаление
+// Пометка на удаление
 $data = $client->{'Catalog_Номенклатура'}->update('40366f94-cded-11e6-e880-00155dd9fc47',{
     'DeletionMark'=>true,
 });
