@@ -184,7 +184,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testGetErrorMessage()
     {
         $data = $this->object->{'Catalog_Номенклатураa'}->top(1)->get();
-        $this->assertEquals('Not found',$this->object->getErrorMessage());
+        $this->assertEquals('Not found',$this->object->getHttpErrorMessage());
 
         $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get();
         $this->assertEquals('',$this->object->getErrorMessage());
@@ -196,7 +196,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     public function testGetErrorCode()
     {
         $data = $this->object->{'Catalog_Номенклатураa'}->top(1)->get();
-        $this->assertEquals('404',$this->object->getErrorCode());
+        $this->assertEquals('404',$this->object->getHttpErrorCode());
 
         $data = $this->object->{'Catalog_Номенклатура'}->top(1)->get();
         $this->assertEquals('',$this->object->getErrorCode());
