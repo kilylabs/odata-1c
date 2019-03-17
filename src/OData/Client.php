@@ -42,7 +42,7 @@ class Client implements \ArrayAccess
     }
 
     public function create(array $data,$options=[]) {
-        return $this->update(null,$data,$options);
+        return $this->update(false,$data,$options);
     }
 
     public function expand($name) {
