@@ -18,8 +18,5 @@
     ],
     "require": {
         "guzzlehttp/guzzle": "^6.2"
-    },
-    "require-dev": {
-        "league/csv": "^9.1"
     }
 }
