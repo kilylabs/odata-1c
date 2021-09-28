@@ -206,6 +206,9 @@ class Client implements \ArrayAccess
                 return null;
             }
         }
+        if(!$resp) {
+            throw new Exception('No response found: '.print_r([$this->http_code,$this->http_message],true));
+        }
         $this->parseMetadata($resp);
         $this->response = new Response($this,$resp);
 
