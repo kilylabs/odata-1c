@@ -116,7 +116,7 @@ class Client implements \ArrayAccess
         return $this->request($method,$options);
     }
 
-    public function delete($id=null,$options=[]) {
+    public function delete($id=null,$filter=null,$options=[]) {
         $query = null;
 
         if($id === null) {
@@ -130,6 +130,8 @@ class Client implements \ArrayAccess
                 $query[] = $k.'='.$v;
             }
             $query = '('.implode(',',$query).')';
+        } elseif(is_array($filter)) {
+            $options = $filter;
         }
 
         if($id && !is_array($id)) {
