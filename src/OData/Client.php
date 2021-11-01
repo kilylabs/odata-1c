@@ -203,8 +203,8 @@ class Client implements \ArrayAccess
             } else {
                 $this->http_code = $e->getCode();
                 $this->http_message = $e->getMessage();
-                return null;
             }
+            return null;
         }
         $this->parseMetadata($resp);
         $this->response = new Response($this,$resp);
