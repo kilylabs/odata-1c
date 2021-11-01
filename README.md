@@ -28,7 +28,7 @@ $client = new Client('http://HOSTNAME/BASE/odata/standard.odata/',[
         'YOUR LOGIN', 
         'YOUR PASSWORD'
     ],
-	'timeout' => 300,
+    'timeout' => 300,
 ]);
 ```
 
