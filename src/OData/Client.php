@@ -68,13 +68,13 @@ class Client implements \ArrayAccess
         } elseif(is_array($id)) {
             $query = [];
             foreach($id as $k=>$v) {
-                if(preg_match('/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',$v)) {
+                if(preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',$v)) {
                     $v = "guid'{$v}'";
                 }
                 $query[] = $k.'='.$v;
             }
             $query = '('.implode(',',$query).')';
-        } elseif(!preg_match('/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',$id)) {
+        } elseif(!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',$id)) {
             $options = $filter;
             $filter = $id;
             $id = null;
@@ -124,7 +124,7 @@ class Client implements \ArrayAccess
         } elseif(is_array($id)) {
             $query = [];
             foreach($id as $k=>$v) {
-                if(preg_match('/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',$v)) {
+                if(preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',$v)) {
                     $v = "guid'{$v}'";
                 }
                 $query[] = $k.'='.$v;
