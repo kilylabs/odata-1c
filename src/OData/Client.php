@@ -68,13 +68,13 @@ class Client implements \ArrayAccess
         } elseif(is_array($id)) {
             $query = [];
             foreach($id as $k=>$v) {
-                if(preg_match('/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',$v)) {
+                if(preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',$v)) {
                     $v = "guid'{$v}'";
                 }
                 $query[] = $k.'='.$v;
             }
             $query = '('.implode(',',$query).')';
-        } elseif(!preg_match('/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',$id)) {
+        } elseif(!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',$id)) {
             $options = $filter;
             $filter = $id;
             $id = null;
@@ -116,7 +116,7 @@ class Client implements \ArrayAccess
         return $this->request($method,$options);
     }
 
-    public function delete($id=null,$options=[]) {
+    public function delete($id=null,$filter=null,$options=[]) {
         $query = null;
 
         if($id === null) {
@@ -124,12 +124,14 @@ class Client implements \ArrayAccess
         } elseif(is_array($id)) {
             $query = [];
             foreach($id as $k=>$v) {
-                if(preg_match('/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',$v)) {
+                if(preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',$v)) {
                     $v = "guid'{$v}'";
                 }
                 $query[] = $k.'='.$v;
             }
             $query = '('.implode(',',$query).')';
+        } elseif(is_array($filter)) {
+            $options = $filter;
         }
 
         if($id && !is_array($id)) {
@@ -205,6 +207,9 @@ class Client implements \ArrayAccess
                 $this->http_message = $e->getMessage();
             }
             return null;
+        }
+        if(!$resp) {
+            throw new Exception('No response found: '.print_r([$this->http_code,$this->http_message],true));
         }
         $this->parseMetadata($resp);
         $this->response = new Response($this,$resp);

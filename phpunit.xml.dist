@@ -3,22 +3,18 @@
     colors="true"
     processIsolation="false"
     stopOnFailure="false"
-    syntaxCheck="false"
     convertErrorsToExceptions="true"
     convertNoticesToExceptions="true"
     convertWarningsToExceptions="true"
-    testSuiteLoaderClass="PHPUnit_Runner_StandardTestSuiteLoader">
+    testSuiteLoaderFile="phpunit/src/Runner/StandardTestSuiteLoader.php">
     <php>
-        <!-- You should put here yout 1C OData URL -->
-        <!--<server name="URL_ODATA_1C" value="http://HOSTNAME/BASE/odata/standard.odata/" />-->
-        <!-- Set your creditails-->
-        <!--<server name="LOGIN" value="YOUR LOGIN HERE" />-->
-        <!--<server name="PASSWORD" value="YOUR PASSWORD HERE" />-->
-        <!-- This will allow CREATE, UPDATE and DELETE operations. USE WITH CAUTION!!! -->
+        <!--<server name="URL_ODATA_1C" value="https://YOUR_ODATA_HOST/YOUR_CONF/odata/standard.odata/" />-->
+        <!--<server name="LOGIN" value="YOUR_LOGIN" />-->
+        <!--<server name="PASSWORD" value="YOUR_PASSWORD" />-->
         <!--<server name="ALLOW_UNSAFE_OPERATIONS" value="true" />-->
     </php>
     <testsuites>
-        <testsuite>
+        <testsuite name="main">
             <directory>tests/OData/Tests</directory>
         </testsuite>
     </testsuites>

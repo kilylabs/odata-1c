@@ -1,22 +1,36 @@
 {
-    "name": "kilylabs/odata-1c",
-    "description": "ODATA protocol client adopted to use with 1C",
-    "keywords": ["1c", "1с", "odata", "1c enterprise", "8.3", "1с enterprise 8.3"],
-    "type": "library",
-    "license": "MIT",
-	"autoload": {
-		"psr-4": {"Kily\\Tools1C\\OData\\": "src/OData"}
-	},
-	"autoload-dev": {
-		"psr-4": {"Kily\\Tools1C\\OData\\Tests\\": "tests/OData/Tests"}
-	},
-    "authors": [
-        {
-            "name": "Alexander Bogdanov",
-            "email": "ab@dev.kily.ru"
-        }
-    ],
-    "require": {
-        "guzzlehttp/guzzle": "^6.2"
+  "name":         "kilylabs/odata-1c",
+  "description":  "ODATA protocol client adopted to use with 1C",
+  "keywords":     [
+    "1c",
+    "1с",
+    "odata",
+    "1c enterprise",
+    "8.3",
+    "1с enterprise 8.3"
+  ],
+  "type":         "library",
+  "license":      "MIT",
+  "autoload":     {
+    "psr-4": {
+      "Kily\\Tools1C\\OData\\": "src/OData"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Kily\\Tools1C\\OData\\Tests\\": "tests/OData/Tests"
+    }
+  },
+  "authors":      [
+    {
+      "name":  "Alexander Bogdanov",
+      "email": "ab@dev.kily.ru"
+    }
+  ],
+  "require":      {
+    "guzzlehttp/guzzle": "^7.2"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.1"
+  }
 }
