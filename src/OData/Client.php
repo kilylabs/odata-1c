@@ -240,7 +240,7 @@ class Client implements \ArrayAccess
     public function getLastId() {
         return !empty($this->_metadata['last_id'])
             ? $this->_metadata['last_id']
-            : isset($this->response->values()[0]['Ref_Key']) ? $this->response->values()[0]['Ref_Key'] : null;
+            : (isset($this->response->values()[0]['Ref_Key']) ? $this->response->values()[0]['Ref_Key'] : null);
     }
 
     protected function parseMetadata(ResponseInterface $resp) {
