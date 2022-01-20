@@ -3,7 +3,7 @@
 namespace Kily\Tools1C\OData;
 
 use Psr\Http\Message\ResponseInterface;
-use GuzzleHttp\Exception\TransferException;
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Client as Guzzle;
 
@@ -193,8 +193,8 @@ class Client implements \ArrayAccess
         try {
             $resp = $this->client->request($method,$request_str,$options);
             $this->request_ok = true;
-        } catch(TransferException $e) {
-            if($e instanceof TransferException) {
+        } catch(BadResponseException $e) {
+            if($e instanceof BadResponseException) {
                 if($e->hasResponse() && ($resp = $e->getResponse()) ) {
                     $this->http_code = $resp->getStatusCode();
                     $this->http_message = $resp->getReasonPhrase();
