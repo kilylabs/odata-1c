@@ -1,2 +1,6 @@
 /vendor
 /phpunit.xml
+/get.php
+/package.json
+/package-lock*
+/.phpunit.result.cache

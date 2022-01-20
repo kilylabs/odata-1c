@@ -1,0 +1,17 @@
+name: PHP-CS-FIXER
+on: [push, pull_request]
+jobs:
+    php-cs-fixer:
+        name: PHP-CS-Fixer
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checking out repo
+              uses: actions/checkout@v2
+
+            - name: PHP-CS-Fixer
+              uses: docker://oskarstark/php-cs-fixer-ga
+
+            - name: Autocommiting php-cs-fixer fixes
+              uses: stefanzweifel/git-auto-commit-action@v4
+              with:
+                commit_message: "fix(style): PHP-CS-Fixer changes"

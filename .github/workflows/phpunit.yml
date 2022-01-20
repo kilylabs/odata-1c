@@ -1,0 +1,28 @@
+name: PHPUNIT
+
+on: [push, pull_request]
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup PHP with gd and imagick
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: dom
+
+      - name: Checking out repo
+        uses: actions/checkout@v2
+
+      - name: Add HTTP basic auth credentials
+        run: echo '${{ secrets.COMPOSER_AUTH_JSON }}' > $GITHUB_WORKSPACE/auth.json
+
+      - name: Installing composer with deps
+        uses: "ramsey/composer-install@v1"
+
+      - name: Running PHPUNIT
+        run: ./vendor/bin/phpunit 
+
+      - name: Remove auth.json file
+        run: rm -f $GITHUB_WORKSPACE/auth.json
